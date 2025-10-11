@@ -1,0 +1,16 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:key="username"
+        android:title="ユーザー名"
+        android:summary="ユーザー名を入力してください" />
+    <SwitchPreferenceCompat
+        android:key="notifications"
+        android:title="通知"
+        android:summary="通知を有効にする" />
+    <ListPreference
+        android:key="color"
+        android:title="テーマカラー"
+        android:entries="@array/color_names"
+        android:entryValues="@array/color_values"
+        android:summary="テーマカラーを選択してください" />
+</PreferenceScreen>
