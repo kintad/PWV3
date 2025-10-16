@@ -188,33 +188,5 @@
                 android:layout_height="wrap_content"
                 android:background="#FFC0C0"/>
         </LinearLayout>
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
-
-        <TextView
-            android:id="@+id/text_tsec"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="tsec"
-            android:textSize="16sp" />
-
-        <TextView
-            android:id="@+id/text_ch1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ch1"
-            android:textSize="16sp" />
-
-        <TextView
-            android:id="@+id/text_ch2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ch2"
-            android:textSize="16sp" />
-
-    </LinearLayout>
     </LinearLayout>
 </ScrollView>

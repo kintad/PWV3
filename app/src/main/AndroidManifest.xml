@@ -2,8 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
-
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -23,13 +21,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".MeasureActivity"
-            android:theme="@style/Theme.App.NoActionBar"
-            android:exported="false" />
         <receiver
             android:name=".UsbPermissionReceiver"
-            android:exported="true">
             <intent-filter>
                 <action android:name="com.dreamelab.pwv3.USB_PERMISSION" />
             </intent-filter>
