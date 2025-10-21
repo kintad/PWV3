@@ -23,6 +23,9 @@
         </activity>
         <receiver
             android:name=".UsbPermissionReceiver"
+            android:exported="true"
+            android:theme="@style/Theme.PWV3.NoActionBar"
+            tools:targetApi="36">
             <intent-filter>
                 <action android:name="com.dreamelab.pwv3.USB_PERMISSION" />
             </intent-filter>

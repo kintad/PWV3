@@ -36,4 +36,17 @@ import java.io.File
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        SerialDataBus.setListener { tSec, ch1, ch2 ->
+            runOnUiThread {
+                onDataReceived(tSec, ch1, ch2)
+            }
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        SerialDataBus.setListener(null)
+    }
 }
