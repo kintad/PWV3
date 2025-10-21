@@ -1,52 +1,77 @@
 package com.dreamelab.pwv3
 
+import android.util.Log
+import java.io.IOException
+import java.nio.charset.Charset
 import com.hoho.android.usbserial.driver.UsbSerialPort
 
-class SerialReaderThread : Thread {
-    private val port: UsbSerialPort
-    private val onDataReceived: (Double, Int, Int) -> Unit
-
-    constructor(port: UsbSerialPort, onDataReceived: (Double, Int, Int) -> Unit) : super() {
-        this.port = port
-        this.onDataReceived = onDataReceived
-    }
-
-    var running = true
+private class SerialReaderThread(
+    private val port: UsbSerialPort,
+    private val onData: (Double, Double, Double) -> Unit
+) : Thread() {
+    @Volatile
+    private var running = true
 
     override fun run() {
-        val buffer =  mutableListOf<Byte>()
-        while (running) {
-            try {
-                val readBuffer = ByteArray(100)
-                val readSize = port.read(readBuffer, 100) // readSizeはInt型
-                val available: List<Byte> = buffer.take(readSize)
-                if (available.isNotEmpty()) {
-                    buffer.addAll(available.toList())
-                    while (buffer.size >= 9) {
-                        if (buffer[0] != 0xFF.toByte()) {
-                            buffer.removeAt(0)
-                            continue
+        val threadTag = "SerialReaderThread"
+        Log.d(threadTag, "run() entered")
+        val readBuffer = ByteArray(1024)
+        val sb = StringBuilder()
+        try {
+            while (running && !isInterrupted) {
+                try {
+                    val len = port.read(readBuffer, 200) // timeout 200ms
+                    if (len > 0) {
+                        val s = String(readBuffer, 0, len, Charset.forName("UTF-8"))
+                        Log.d(threadTag, "read len=$len data='${s.replace("\n","\\n")}'")
+                        sb.append(s)
+                        var idx: Int
+                        while (true) {
+                            idx = sb.indexOf("\n")
+                            if (idx == -1) break
+                            val line = sb.substring(0, idx).trim()
+                            sb.delete(0, idx + 1)
+                            if (line.isEmpty()) continue
+                            processLine(line)
                         }
-                        val packet = buffer.take(9)
-                        buffer.subList(0, 9).clear()
-                        val tUs = (packet[1].toInt() and 0xFF) or
-                                ((packet[2].toInt() and 0xFF) shl 8) or
-                                ((packet[3].toInt() and 0xFF) shl 16) or
-                                ((packet[4].toInt() and 0xFF) shl 24)
-                        val tSec = tUs / 1_000_000.0
-                        val ch1 = ((packet[5].toInt() and 0xFF) shl 8) or (packet[6].toInt() and 0xFF)
-                        val ch2 = ((packet[7].toInt() and 0xFF) shl 8) or (packet[8].toInt() and 0xFF)
-                        onDataReceived(tSec, ch1, ch2)
                     }
+                } catch (e: IOException) {
+                    Log.e(threadTag, "read IOException", e)
+                    break
+                } catch (e: Exception) {
+                    Log.e(threadTag, "read Exception", e)
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                break
             }
+        } finally {
+            try { port.close() } catch (_: Exception) {}
+            Log.d(threadTag, "run() exiting, port closed")
         }
     }
 
-    fun stopThread() {
+    private fun processLine(line: String) {
+        val threadTag = "SerialReaderThread"
+        Log.d(threadTag, "processLine: '$line'")
+        if (line.equals("HB", ignoreCase = true) || line.equals("heartbeat", ignoreCase = true)) {
+            onData(-1.0, 0.0, 0.0)
+            return
+        }
+        val parts = line.split(",", " ", "\t").map { it.trim() }.filter { it.isNotEmpty() }
+        if (parts.size >= 3) {
+            try {
+                val tSec = parts[0].toDoubleOrNull() ?: parts[0].toIntOrNull()?.toDouble() ?: 0.0
+                val ch1 = parts[1].toDoubleOrNull() ?: 0.0
+                val ch2 = parts[2].toDoubleOrNull() ?: 0.0
+                onData(tSec, ch1, ch2)
+            } catch (e: Exception) {
+                Log.e(threadTag, "parse error for line='$line'", e)
+            }
+        } else {
+            Log.d(threadTag, "partial or unrecognized line: '$line'")
+        }
+    }
+
+    override fun interrupt() {
         running = false
+        super.interrupt()
     }
 }
