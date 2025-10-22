@@ -193,7 +193,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun startDeviceSelectionAndOpen() {
         val prober = UsbSerialProber.getDefaultProber()
 
-        // まず低レベルの deviceList をログ出力（デバッグ用）
+        // まず低レベルの deviceList をログ出力（デバッグ用 ）
         val deviceList = usbManager.deviceList
         Log.d(TAG, "usbManager.deviceList size=${deviceList.size} keys=${deviceList.keys}")
         for ((key, dev) in deviceList) {
