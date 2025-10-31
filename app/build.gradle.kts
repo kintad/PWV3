@@ -55,4 +55,7 @@ dependencies {
     implementation("androidx.preference:preference:1.2.1")
     implementation("com.github.mik3y:usb-serial-for-android:3.9.0")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation("androidx.core:core-ktx:1.10.1")
+    implementation("com.github.PhilJay:MPAndroidChart:3.1.0")
+
 }

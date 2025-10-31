@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- app/src/main/res/values/styles.xml -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.App.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/purple_500</item>
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <!-- 必要に応じて他の属性を追加 -->
+    </style>
+</resources>
