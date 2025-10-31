@@ -23,6 +23,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".MeasureActivity"
+            android:theme="@style/Theme.App.NoActionBar"
+            android:exported="false" />
         <receiver
             android:name=".UsbPermissionReceiver"
             android:exported="true">
