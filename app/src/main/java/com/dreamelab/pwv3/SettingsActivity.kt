@@ -42,6 +42,9 @@ class SettingsActivity : AppCompatActivity() {
     // MeasureActivity を一度だけ起動するフラグ
     private var measureLaunched = false
 
+    // SerialManager 登録状態フラグ
+    private var serialRegistered = false
+
     // ActivityResult for file/folder pickers
     private val csvFilePicker =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -74,11 +77,17 @@ class SettingsActivity : AppCompatActivity() {
 
     private val serialOnStatus: (String) -> Unit = { msg ->
         runOnUiThread {
-            Log.d(TAG, "SerialManager: $msg")
+            // デバッグログを追加：実際に届くメッセージを確認する
+            Log.d(TAG, "SerialManager status raw: \"$msg\"")
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
 
-            // ポートオープンの通知を受けて MeasureActivity を一度だけ起動
-            if (!measureLaunched && msg.contains("ポートをオープン")) {
+            // ポートオープンの判定を複数候補で柔軟にチェック
+            val opened = msg.contains("ポートをオープン") ||
+                    msg.contains("opened", ignoreCase = true) ||
+                    msg.contains("open", ignoreCase = true) ||
+                    msg.contains("ポートを開") // 「開く」「開きました」などに対応
+
+            if (!measureLaunched && opened) {
                 measureLaunched = true
                 try {
                     val intent = Intent(this@SettingsActivity, MeasureActivity::class.java)
@@ -95,7 +104,7 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
-        // findViewById 初期化（省略せず必要な ID を使ってください）
+        // findViewById 初期化
         subjectIdEdit = findViewById(R.id.edit_subject_id)
         vesselLengthEdit = findViewById(R.id.edit_vessel_length)
         nonlinearFactorEdit = findViewById(R.id.edit_nonlinear_factor)
@@ -119,8 +128,6 @@ class SettingsActivity : AppCompatActivity() {
 
         fileLogger = FileLogger(this, "log.txt")
 
-        // spinner 等の設定（省略）
-
         csvSelectButton.setOnClickListener { csvFilePicker.launch("text/csv") }
         saveFolderSelectButton.setOnClickListener { folderPicker.launch(null) }
 
@@ -128,30 +135,49 @@ class SettingsActivity : AppCompatActivity() {
         analyzeButton.setOnClickListener { Toast.makeText(this, "解析開始（未実装）", Toast.LENGTH_SHORT).show() }
         closeButton.setOnClickListener { finish() }
 
-        // SerialManager に登録（ここで一度だけ登録）
-        SerialManager.register(this, serialOnData, serialOnStatus)
-
-        // measure ボタンは接続開始を要求する（以前の誤った再登録を置き換え）
+        // onCreate では SerialManager.register を呼ばない（重複防止）
         measureButton.setOnClickListener {
             SerialManager.findAndRequestPermissionAndOpen()
         }
     }
 
-    override fun onDestroy() {
-        // SerialManager から解除（登録時と同じハンドラを渡す）
-        try {
-            SerialManager.unregister(serialOnData, serialOnStatus)
-        } catch (e: Exception) {
-            Log.w(TAG, "SerialManager.unregister failed", e)
-        }
+    override fun onStart() {
+        super.onStart()
+        // 戻ってきたときに再度 MeasureActivity を起動できるようにリセット
+        measureLaunched = false
 
-        // fileLogger 解放
+        // SerialManager 登録（重複登録防止）
+        if (!serialRegistered) {
+            try {
+                SerialManager.register(this, serialOnData, serialOnStatus)
+                serialRegistered = true
+                Log.d(TAG, "SerialManager registered")
+            } catch (e: Exception) {
+                Log.w(TAG, "SerialManager.register failed", e)
+            }
+        }
+    }
+
+    override fun onStop() {
+        // SerialManager 解除を onStop に移動（重複解除防止）
+        if (serialRegistered) {
+            try {
+                SerialManager.unregister(serialOnData, serialOnStatus)
+                serialRegistered = false
+                Log.d(TAG, "SerialManager unregistered")
+            } catch (e: Exception) {
+                Log.w(TAG, "SerialManager.unregister failed", e)
+            }
+        }
+        super.onStop()
+    }
+
+    override fun onDestroy() {
         try {
             fileLogger.close()
         } catch (e: Exception) {
             Log.w(TAG, "fileLogger.close failed", e)
         }
-
         super.onDestroy()
     }
 }

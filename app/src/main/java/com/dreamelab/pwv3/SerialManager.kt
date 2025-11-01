@@ -1,5 +1,7 @@
+// kotlin
 package com.dreamelab.pwv3
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -69,6 +71,9 @@ object SerialManager {
     }
 
     fun findAndRequestPermissionAndOpen() {
+        // 受信器を確実に登録しておく（許可フローのため）
+        ensureReceiverRegistered()
+
         val um = usbManager ?: run {
             notifyStatus("UsbManager 未初期化")
             return
@@ -89,9 +94,16 @@ object SerialManager {
             return
         }
 
+        notifyStatus("対象デバイス: vendor=${device.vendorId} product=${device.productId}")
+
         if (um.hasPermission(device)) {
             notifyStatus("既に許可あり。接続を試行します")
-            openSerialFromDevice(device)
+            try {
+                openSerialFromDevice(device)
+            } catch (e: Exception) {
+                notifyStatus("openSerialFromDevice 例外: ${e.message}")
+                Log.w(TAG, "openSerialFromDevice failed", e)
+            }
             return
         }
 
@@ -107,51 +119,139 @@ object SerialManager {
     }
 
     private fun openSerialFromDevice(device: UsbDevice) {
-        val um = usbManager ?: return
+        val um = usbManager ?: run {
+            notifyStatus("UsbManager 未初期化 (openSerialFromDevice)")
+            return
+        }
         val prober = UsbSerialProber.getDefaultProber()
         val driver = prober.probeDevice(device)
         if (driver == null) {
             notifyStatus("ドライバが見つかりません")
             return
         }
-        openPortAndStart(driver)
+        notifyStatus("ドライバ検出: ${driver.device.deviceName}, ports=${driver.ports.size}")
+        // 修正: 同期版 openPortAndStart -> 非同期版 openPortAndStartAsync を呼ぶ
+        openPortAndStartAsync(driver)
     }
 
-    private fun openPortAndStart(driver: com.hoho.android.usbserial.driver.UsbSerialDriver) {
-        val um = usbManager ?: return
-        val device = driver.device
-        val port = driver.ports.firstOrNull()
-        if (port == null) {
-            notifyStatus("ポートが見つかりません")
+    private fun requestUsbPermission(device: UsbDevice) {
+        val ctx = appContext ?: run {
+            notifyStatus("appContext が未初期化 (requestUsbPermission)")
             return
         }
-        val connection: UsbDeviceConnection? = um.openDevice(device)
-        if (connection == null) {
-            notifyStatus("デバイス接続に失敗しました")
-            Log.w(TAG, "openDevice returned null for $device")
-            return
-        }
-
         try {
-            port.open(connection)
-            port.setParameters(500000, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
-            try { port.javaClass.getMethod("setDTR", Boolean::class.javaPrimitiveType).invoke(port, true) } catch (_: Exception) {}
-            try { port.javaClass.getMethod("setRTS", Boolean::class.javaPrimitiveType).invoke(port, true) } catch (_: Exception) {}
-
-            currentPort = port
-            notifyStatus("ポートをオープンしました")
+            val intent = Intent(ACTION_USB_PERMISSION).apply { setPackage(ctx.packageName) }
+            val piFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            } else {
+                PendingIntent.FLAG_UPDATE_CURRENT
+            }
+            val permissionIntent = PendingIntent.getBroadcast(ctx, 0, intent, piFlags)
+            usbManager?.requestPermission(device, permissionIntent)
+            notifyStatus("USB許可を再要求しました (device=${device.deviceName})")
         } catch (e: Exception) {
-            notifyStatus("ポートオープン失敗: ${e.message}")
-            try { connection.close() } catch (_: Exception) {}
-            return
+            notifyStatus("requestUsbPermission 失敗: ${e.message}")
+            Log.w(TAG, "requestUsbPermission failed", e)
         }
-
-        serialThread?.interrupt()
-        serialThread = SerialReaderThread(port) { t, c1, c2 -> notifyData(t, c1, c2) }
-        serialThread?.start()
-        notifyStatus("シリアル読み取りスレッドを開始しました")
     }
 
+    private fun openPortAndStartAsync(driver: com.hoho.android.usbserial.driver.UsbSerialDriver) {
+        Thread {
+            try {
+                val um = usbManager ?: run {
+                    notifyStatus("UsbManager 未初期化 (openPortAndStartAsync)")
+                    return@Thread
+                }
+                val device = driver.device
+                notifyStatus("openPortAndStartAsync 開始 device=${device.deviceName}")
+
+                // 既存のポート/スレッドを安全に閉じる
+                try {
+                    serialThread?.interrupt()
+                    serialThread = null
+                } catch (e: Exception) {
+                    Log.w(TAG, "serialThread interrupt failed", e)
+                }
+                try {
+                    currentPort?.close()
+                } catch (e: Exception) {
+                    Log.w(TAG, "currentPort close failed", e)
+                } finally {
+                    currentPort = null
+                }
+
+                val port = driver.ports.firstOrNull()
+                if (port == null) {
+                    notifyStatus("ポートが見つかりません: ports=${driver.ports.size}")
+                    return@Thread
+                }
+
+                // openDevice を複数回試行する（タイミング/競合対策）
+                var connection: UsbDeviceConnection? = null
+                var attempts = 0
+                val maxAttempts = 5
+                while (attempts < maxAttempts) {
+                    attempts++
+                    try {
+                        connection = um.openDevice(device)
+                        if (connection != null) {
+                            notifyStatus("openDevice 成功 (attempt=$attempts)")
+                            break
+                        } else {
+                            notifyStatus("openDevice returned null (attempt=$attempts)")
+                            Log.w(TAG, "openDevice returned null for $device (attempt=$attempts)")
+
+                            // 権限を再要求する（念のため）
+                            requestUsbPermission(device)
+                            Thread.sleep(250L)
+                        }
+                    } catch (e: Exception) {
+                        notifyStatus("openDevice 例外: ${e.message} (attempt=$attempts)")
+                        Log.w(TAG, "openDevice exception", e)
+                        try { Thread.sleep(250L) } catch (_: InterruptedException) { break }
+                    }
+                }
+
+                if (connection == null) {
+                    notifyStatus("デバイス接続に失敗しました（複数回試行）")
+                    return@Thread
+                }
+
+                try {
+                    notifyStatus("ポートを開いて設定を行います")
+                    port.open(connection)
+                    port.setParameters(500000, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+                    try { port.javaClass.getMethod("setDTR", Boolean::class.javaPrimitiveType).invoke(port, true) } catch (_: Exception) {}
+                    try { port.javaClass.getMethod("setRTS", Boolean::class.javaPrimitiveType).invoke(port, true) } catch (_: Exception) {}
+
+                    currentPort = port
+                    notifyStatus("ポートをオープンしました")
+                    Log.d(TAG, "Port opened: $port")
+                } catch (e: Exception) {
+                    notifyStatus("ポートオープン失敗: ${e.message}")
+                    Log.w(TAG, "port open failed", e)
+                    try { connection.close() } catch (_: Exception) {}
+                    return@Thread
+                }
+
+                // 読み取りスレッド開始
+                try {
+                    serialThread?.interrupt()
+                    serialThread = SerialReaderThread(port) { t, c1, c2 -> notifyData(t, c1, c2) }
+                    serialThread?.start()
+                    notifyStatus("シリアル読み取りスレッドを開始しました")
+                } catch (e: Exception) {
+                    notifyStatus("serial thread start failed: ${e.message}")
+                    Log.w(TAG, "serial thread start failed", e)
+                }
+            } catch (e: Exception) {
+                notifyStatus("openPortAndStartAsync 例外: ${e.message}")
+                Log.w(TAG, "openPortAndStartAsync failed", e)
+            }
+        }.start()
+    }
+
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun ensureReceiverRegistered() {
         if (registeredReceiver) return
         val ctx = appContext ?: return
@@ -162,6 +262,7 @@ object SerialManager {
             ctx.registerReceiver(usbPermissionReceiver, IntentFilter(ACTION_USB_PERMISSION))
         }
         registeredReceiver = true
+        notifyStatus("usbPermissionReceiver を登録しました")
     }
 
     private fun releaseAll() {
