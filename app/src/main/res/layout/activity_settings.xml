@@ -1,220 +1,233 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+
+    <!-- ScrollView の直子はこの LinearLayout のみ -->
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:layout_height="wrap_content">
 
-        <!-- タイトル -->
-        <FrameLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+        <include layout="@layout/toolbar_common" />
 
-            <ImageView
-                android:id="@+id/logoImage"
-                android:layout_width="253dp"
-                android:layout_height="match_parent"
-                android:contentDescription="@string/logo_alt_text"
-                android:src="@drawable/logo" />
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
 
+            <!-- ここに元のコンテンツをそのまま入れる -->
+            <!-- タイトル -->
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <ImageView
+                    android:id="@+id/logoImage"
+                    android:layout_width="253dp"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/logo_alt_text"
+                    android:src="@drawable/logo" />
+
+                <TextView
+                    android:id="@+id/logoAltText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/logo_alt_text"
+                    android:gravity="center"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <!-- New entry -->
             <TextView
-                android:id="@+id/logoAltText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/logo_alt_text"
-                android:gravity="center"
-                android:visibility="gone" />
-        </FrameLayout>
-
-        <!-- New entry -->
-        <TextView
-            android:text="New entry"
-            android:textColor="#0000FF"
-            android:textSize="24sp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <!-- Subject ID -->
-        <TextView android:text="Subject ID" android:textColor="#0000FF"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-        <EditText
-            android:id="@+id/edit_subject_id"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <!-- Vessel length -->
-        <TextView android:text="Vessel length(cm)" android:textColor="#0000FF"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-        <EditText
-            android:id="@+id/edit_vessel_length"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="numberDecimal" />
-
-        <!-- Nonlinear factor -->
-        <TextView android:text="Nonlinear factor" android:textColor="#0000FF"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-        <EditText
-            android:id="@+id/edit_nonlinear_factor"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="numberDecimal" />
-
-        <!-- CSV file read -->
-        <TextView android:text="CSV file read" android:textColor="#008000"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-        <LinearLayout android:orientation="horizontal"
-            android:layout_width="match_parent" android:layout_height="wrap_content">
-            <EditText
-                android:id="@+id/edit_csv_file"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content" />
-            <Button
-                android:id="@+id/button_csv_select"
-                android:text="Select"
+                android:text="New entry"
+                android:textColor="#0000FF"
+                android:textSize="24sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
-        </LinearLayout>
 
-        <!-- Conditions -->
-        <TextView android:text="Conditions" android:textColor="#FF0000"
-            android:textSize="20sp"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-
-        <!-- Detection mode -->
-        <TextView android:text="Detection mode" android:textColor="#FF0000"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-        <Spinner
-            android:id="@+id/spinnerDetectionMode"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:prompt="@string/detection_mode" />
-
-        <!-- Detect percent -->
-        <TextView android:text="Detect percent at rising" android:textColor="#FF0000"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-        <EditText
-            android:id="@+id/edit_detect_percent"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="number" />
-
-        <!-- Digital filter -->
-        <TextView android:text="Digital filter" android:textColor="#FF0000"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-
-        <!-- f1 -->
-        <TextView android:text="f1(Hz)" android:textColor="#FF0000"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-        <EditText
-            android:id="@+id/edit_f1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="numberDecimal" />
-
-        <!-- f2 -->
-        <TextView android:text="f2(Hz)" android:textColor="#FF0000"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-        <LinearLayout android:orientation="horizontal"
-            android:layout_width="match_parent" android:layout_height="wrap_content">
+            <!-- Subject ID -->
+            <TextView android:text="Subject ID" android:textColor="#0000FF"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <EditText
-                android:id="@+id/edit_f2"
-                android:layout_width="0dp"
-                android:layout_weight="1"
+                android:id="@+id/edit_subject_id"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <!-- Vessel length -->
+            <TextView android:text="Vessel length(cm)" android:textColor="#0000FF"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <EditText
+                android:id="@+id/edit_vessel_length"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="numberDecimal" />
-            <Button
-                android:id="@+id/button_apply"
-                android:text="Apply"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
 
-        <!-- FIR bandpass -->
-        <TextView android:text="FIR bandpass 0.4 - 10.0 Hz" android:textColor="#FF0000"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-
-        <!-- Save folder -->
-        <TextView android:text="Save folder" android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-        <LinearLayout android:orientation="horizontal"
-            android:layout_width="match_parent" android:layout_height="wrap_content">
+            <!-- Nonlinear factor -->
+            <TextView android:text="Nonlinear factor" android:textColor="#0000FF"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <EditText
-                android:id="@+id/edit_save_folder"
-                android:layout_width="0dp"
-                android:layout_weight="1"
+                android:id="@+id/edit_nonlinear_factor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal" />
+
+            <!-- CSV file read -->
+            <TextView android:text="CSV file read" android:textColor="#008000"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <LinearLayout android:orientation="horizontal"
+                android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText
+                    android:id="@+id/edit_csv_file"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content" />
+                <Button
+                    android:id="@+id/button_csv_select"
+                    android:text="Select"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <!-- Conditions -->
+            <TextView android:text="Conditions" android:textColor="#FF0000"
+                android:textSize="20sp"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+            <!-- Detection mode -->
+            <TextView android:text="Detection mode" android:textColor="#FF0000"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <Spinner
+                android:id="@+id/spinnerDetectionMode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:prompt="@string/detection_mode" />
+
+            <!-- Detect percent -->
+            <TextView android:text="Detect percent at rising" android:textColor="#FF0000"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <EditText
+                android:id="@+id/edit_detect_percent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number" />
+
+            <!-- Digital filter -->
+            <TextView android:text="Digital filter" android:textColor="#FF0000"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+            <!-- f1 -->
+            <TextView android:text="f1(Hz)" android:textColor="#FF0000"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <EditText
+                android:id="@+id/edit_f1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal" />
+
+            <!-- f2 -->
+            <TextView android:text="f2(Hz)" android:textColor="#FF0000"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <LinearLayout android:orientation="horizontal"
+                android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText
+                    android:id="@+id/edit_f2"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal" />
+                <Button
+                    android:id="@+id/button_apply"
+                    android:text="Apply"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <!-- FIR bandpass -->
+            <TextView android:text="FIR bandpass 0.4 - 10.0 Hz" android:textColor="#FF0000"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+            <!-- Save folder -->
+            <TextView android:text="Save folder" android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+            <LinearLayout android:orientation="horizontal"
+                android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText
+                    android:id="@+id/edit_save_folder"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content" />
+                <Button
+                    android:id="@+id/button_save_folder_select"
+                    android:text="Select"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <!-- Serial port -->
+            <TextView android:text="Serial port" android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+            <Spinner
+                android:id="@+id/spinner_serial_port"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
-            <Button
-                android:id="@+id/button_save_folder_select"
-                android:text="Select"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+
+            <!-- ボタン群 -->
+            <LinearLayout android:orientation="horizontal"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="center">
+                <Button
+                    android:id="@+id/button_measure"
+                    android:text="Measure"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:background="#E0E0FF"/>
+                <Button
+                    android:id="@+id/button_analyze"
+                    android:text="Analyze"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:background="#C0FFC0"/>
+                <Button
+                    android:id="@+id/button_close"
+                    android:text="Close"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:background="#FFC0C0"/>
+            </LinearLayout>
+
+            <!-- テキスト群 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/text_tsec"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="tsec"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/text_ch1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ch1"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/text_ch2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ch2"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
         </LinearLayout>
-
-        <!-- Serial port -->
-        <TextView android:text="Serial port" android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-        <Spinner
-            android:id="@+id/spinner_serial_port"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <!-- ボタン群 -->
-        <LinearLayout android:orientation="horizontal"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:gravity="center">
-            <Button
-                android:id="@+id/button_measure"
-                android:text="Measure"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:background="#E0E0FF"/>
-            <Button
-                android:id="@+id/button_analyze"
-                android:text="Analyze"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:background="#C0FFC0"/>
-            <Button
-                android:id="@+id/button_close"
-                android:text="Close"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:background="#FFC0C0"/>
-        </LinearLayout>
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
-
-        <TextView
-            android:id="@+id/text_tsec"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="tsec"
-            android:textSize="16sp" />
-
-        <TextView
-            android:id="@+id/text_ch1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ch1"
-            android:textSize="16sp" />
-
-        <TextView
-            android:id="@+id/text_ch2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ch2"
-            android:textSize="16sp" />
-
-    </LinearLayout>
     </LinearLayout>
 </ScrollView>

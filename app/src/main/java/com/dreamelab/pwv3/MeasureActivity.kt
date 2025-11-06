@@ -268,11 +268,6 @@ class MeasureActivity : AppCompatActivity() {
         usbReceiverRegistered = true
     }
 
-    /**
-     * 外部から呼ぶエントリポイント:
-     * - 既に許可がある場合は開いて遷移する
-     * - 許可がなければ許可を要求する
-     */
     fun connectDevice(device: UsbDevice) {
         usbDevice = device
         if (usbManager?.hasPermission(device) == true) {
