@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- 右上の HELP ボタン（アイコン＋テキストで常に表示） -->
+    <item
+        android:id="@+id/action_help"
+        android:icon="@drawable/ic_help"
+        android:title="@string/help"
+        app:showAsAction="always|withText"
+        android:contentDescription="@string/help" />
+
+    <!-- START（表示は余裕があれば、ツールバーに表示） -->
+    <item
+        android:id="@+id/action_start"
+        android:icon="@drawable/ic_play"
+        android:title="@string/start"
+        app:showAsAction="ifRoom|withText"
+        android:contentDescription="@string/start" />
+
+    <!-- STOP / SAVE（表示は余裕があれば、ツールバーに表示） -->
+    <item
+        android:id="@+id/action_stop_save"
+        android:icon="@drawable/ic_stop"
+        android:title="@string/stop_save"
+        app:showAsAction="ifRoom|withText"
+        android:contentDescription="@string/stop_save" />
+
+    <!-- 必要ならメニュー内に BACK を入れる（通常はナビゲーションアイコンで扱う） -->
+    <item
+        android:id="@+id/action_back"
+        android:icon="@drawable/ic_arrow_back"
+        android:title="@string/back"
+        app:showAsAction="never"
+        android:contentDescription="@string/back" />
+
+</menu>

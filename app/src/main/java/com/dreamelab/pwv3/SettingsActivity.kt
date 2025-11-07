@@ -1,15 +1,17 @@
 package com.dreamelab.pwv3
 
-import android.content.Context
+import android.app.Activity
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import android.content.Intent
-import android.widget.Toast
+import java.lang.Exception
+import android.widget.ImageView
+import android.widget.TextView
+import android.view.View
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -43,31 +45,26 @@ class SettingsActivity : AppCompatActivity() {
     private var measureLaunched = false
 
     // ActivityResult for file/folder pickers
-    private val csvFilePicker =
-        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-            uri?.let { csvFileEdit.setText(uri.toString()) }
+    private val csvFilePicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        uri?.let {
+            csvFileEdit.setText(it.toString())
         }
-    private val folderPicker =
-        registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
-            uri?.let { saveFolderEdit.setText(uri.toString()) }
+    }
+    private val folderPicker = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
+        uri?.let {
+            saveFolderEdit.setText(it.toString())
         }
+    }
 
     // SerialManager callbacks (同じ参照を登録/解除に使う)
     private val serialOnData: (Double, Double, Double) -> Unit = { tSec, ch1, ch2 ->
         runOnUiThread {
             try {
-                try { fileLogger.appendLine(tSec.toInt(), ch1.toDouble(), ch2.toDouble()) } catch (e: Exception) { Log.w(TAG, "fileLogger.appendLine failed", e) }
-                try { SerialDataBus.post(tSec.toDouble(), ch1.toInt(), ch2.toInt()) } catch (e: Exception) { Log.w(TAG, "SerialDataBus.post failed", e) }
-
-                if (tSec == -1.0) {
-                    Log.d(TAG, "heartbeat received")
-                } else {
-                    myTsecTextView.text = tSec.toString()
-                    myCh1TextView.text = ch1.toString()
-                    myCh2TextView.text = ch2.toString()
-                }
+                myTsecTextView.text = String.format("%.3f", tSec)
+                myCh1TextView.text = String.format("%.1f", ch1)
+                myCh2TextView.text = String.format("%.1f", ch2)
             } catch (e: Exception) {
-                Log.w(TAG, "serialOnData handler failed", e)
+                Log.w(TAG, "serialOnData update failed", e)
             }
         }
     }
@@ -75,16 +72,17 @@ class SettingsActivity : AppCompatActivity() {
     private val serialOnStatus: (String) -> Unit = { msg ->
         runOnUiThread {
             Log.d(TAG, "SerialManager: $msg")
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@SettingsActivity, msg, Toast.LENGTH_SHORT).show()
 
-            // ポートオープンの通知を受けて MeasureActivity を一度だけ起動
-            if (!measureLaunched && msg.contains("ポートをオープン")) {
+            // ポートオープン通知や既に接続済み通知を受けて MeasureActivity を一度だけ起動
+            if (!measureLaunched && (msg.contains("ポートをオープン") || msg.contains("既に接続済み") || msg.contains("既に許可あり"))) {
                 measureLaunched = true
                 try {
                     val intent = Intent(this@SettingsActivity, MeasureActivity::class.java)
+                    // 必要なら追加の extras を設定
                     startActivity(intent)
                 } catch (e: Exception) {
-                    Log.w(TAG, "startActivity failed", e)
+                    Log.w(TAG, "startActivity MeasureActivity failed", e)
                     Toast.makeText(this, "測定画面の起動に失敗しました", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -93,9 +91,43 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_settings)
+        setContentView(R.layout.activity_settings) // 既存のレイアウト名に合わせてください
 
-        // findViewById 初期化（省略せず必要な ID を使ってください）
+        val logoSView = (findViewById<View?>(R.id.logoImage) as? ImageView)
+            ?: (findViewById<View?>(R.id.logo) as? ImageView)
+
+        val helpSView = (findViewById<View?>(R.id.button_help_text))
+            ?: (findViewById<View?>(R.id.btn_help))
+
+        if (logoSView == null) Log.w(TAG, "logo not found in SettingsActivity layout")
+        if (helpSView == null) Log.w(TAG, "help view not found in SettingsActivity layout")
+
+        logoSView?.setOnClickListener {
+            finish()
+        }
+
+        helpSView?.setOnClickListener {
+            val url = "https://www.dreamelab.com/%E3%83%9B%E3%83%BC%E3%83%A0/help"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            try { startActivity(intent) } catch (e: Exception) { Log.w(TAG, "open help url failed", e) }
+        }
+
+        val logoS = findViewById<ImageView>(R.id.logoImage)
+        val helpTxtS = findViewById<TextView>(R.id.button_help_text)
+
+        if (logoS == null) Log.w(TAG, "logoImage not found in layout (toolbar not included?)")
+        if (helpTxtS == null) Log.w(TAG, "button_help_text not found in layout (toolbar not included?)")
+
+        logoS.setOnClickListener {
+            finish()
+        }
+
+        helpTxtS.setOnClickListener {
+            val url = "https://www.dreamelab.com/%E3%83%9B%E3%83%BC%E3%83%A0/help"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            startActivity(intent)
+        }
+
         subjectIdEdit = findViewById(R.id.edit_subject_id)
         vesselLengthEdit = findViewById(R.id.edit_vessel_length)
         nonlinearFactorEdit = findViewById(R.id.edit_nonlinear_factor)
@@ -117,23 +149,42 @@ class SettingsActivity : AppCompatActivity() {
         myCh1TextView = findViewById(R.id.text_ch1)
         myCh2TextView = findViewById(R.id.text_ch2)
 
-        fileLogger = FileLogger(this, "log.txt")
+        // fileLogger 初期化（プロジェクト内の実装に依存）
+        try {
+            fileLogger = FileLogger(this)
+        } catch (e: Exception) {
+            Log.w(TAG, "FileLogger init failed", e)
+        }
 
-        // spinner 等の設定（省略）
+        // ボタン処理
+        csvSelectButton.setOnClickListener {
+            csvFilePicker.launch(arrayOf("*/*"))
+        }
+        saveFolderSelectButton.setOnClickListener {
+            folderPicker.launch(null)
+        }
 
-        csvSelectButton.setOnClickListener { csvFilePicker.launch("text/csv") }
-        saveFolderSelectButton.setOnClickListener { folderPicker.launch(null) }
-
-        applyButton.setOnClickListener { Toast.makeText(this, "設定を適用しました", Toast.LENGTH_SHORT).show() }
-        analyzeButton.setOnClickListener { Toast.makeText(this, "解析開始（未実装）", Toast.LENGTH_SHORT).show() }
-        closeButton.setOnClickListener { finish() }
-
-        // SerialManager に登録（ここで一度だけ登録）
-        SerialManager.register(this, serialOnData, serialOnStatus)
-
-        // measure ボタンは接続開始を要求する（以前の誤った再登録を置き換え）
         measureButton.setOnClickListener {
-            SerialManager.findAndRequestPermissionAndOpen()
+            // 測定開始要求: SerialManager に許可確認と接続を依頼
+            measureLaunched = false
+            try {
+                SerialManager.findAndRequestPermissionAndOpen()
+                Toast.makeText(this, "接続を開始します...", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Log.w(TAG, "measureButton click error", e)
+                Toast.makeText(this, "接続開始に失敗しました", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        closeButton.setOnClickListener {
+            finish()
+        }
+
+        // SerialManager 登録
+        try {
+            SerialManager.register(this, serialOnData, serialOnStatus)
+        } catch (e: Exception) {
+            Log.w(TAG, "SerialManager.register failed", e)
         }
     }
 
@@ -149,7 +200,7 @@ class SettingsActivity : AppCompatActivity() {
         try {
             fileLogger.close()
         } catch (e: Exception) {
-            Log.w(TAG, "fileLogger.close failed", e)
+            // ignore
         }
 
         super.onDestroy()
